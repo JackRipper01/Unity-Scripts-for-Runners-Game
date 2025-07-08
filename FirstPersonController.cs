@@ -79,8 +79,7 @@ public class FirstPersonController : MonoBehaviour
     {
         // 1. First, perform the physics check.
         grounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayers);
-        if (grounded)
-            Debug.Log("Grounded is True");
+
         // 2. Then, calculate gravity's effect based on the ground check result.
         if (grounded && verticalVelocity < 0)
         {
@@ -109,14 +108,11 @@ public class FirstPersonController : MonoBehaviour
                     if (t.position.x < halfScreenWidth && leftFingerID == -1)
                     {
                         leftFingerID = t.fingerId;
-                        Debug.Log("Tracking Left Finger");
                         moveTouchStartPos = t.position;
-                        Debug.Log("touchPosition initialized");
                     }
                     else if (t.position.x > halfScreenWidth && rightFingerID == -1)
                     {
                         rightFingerID = t.fingerId;
-                        Debug.Log("Tracking Right Finger");
                     }
                     break;
                 case TouchPhase.Ended:
@@ -125,12 +121,10 @@ public class FirstPersonController : MonoBehaviour
                     {
                         leftFingerID = -1;
                         moveInput = Vector2.zero;
-                        Debug.Log("Stop tracking Left Finger");
                     }
                     else if (t.fingerId == rightFingerID)
                     {
                         rightFingerID = -1;
-                        Debug.Log("Stop tracking Right Finger");
                     }
                     break;
                 case TouchPhase.Moved:
