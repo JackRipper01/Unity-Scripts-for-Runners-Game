@@ -15,6 +15,7 @@ public class FirstPersonController : MonoBehaviour
     //Player movement
     Vector2 moveTouchStartPos;
     Vector2 moveInput;
+    Vector3 finalMove;
     private float verticalVelocity;
 
     //Touch detection
@@ -52,13 +53,49 @@ public class FirstPersonController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // Gather all input here.
         GetTouchInput();
-        HandleLook(); 
-        HandleMovementAndGravity();
+
+        // Camera look is not physics-based, it's fine in Update.
+        // It will feel more responsive here.
+        HandleLook();
+
+        // Calculate the desired horizontal movement based on input.
+        // We store it in a class variable for FixedUpdate to use.
+        Vector3 horizontalMove = Vector3.zero;
+        if (leftFingerID != -1 && moveInput.sqrMagnitude > moveInputDeadZonePercent)
+        {
+            Vector2 movementDir = moveInput.normalized * moveSpeed;
+            horizontalMove = transform.forward * movementDir.y + transform.right * movementDir.x;
+        }
+
+        // Combine with the vertical velocity to create the final move direction.
+        // Note: verticalVelocity is calculated in FixedUpdate.
+        finalMove = horizontalMove + (Vector3.up * verticalVelocity);
     }
+
+    // --- FixedUpdate is for ALL physics and CharacterController movement ---
     void FixedUpdate()
     {
+        // 1. First, perform the physics check.
         grounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayers);
+        if (grounded)
+            Debug.Log("Grounded is True");
+        // 2. Then, calculate gravity's effect based on the ground check result.
+        if (grounded && verticalVelocity < 0)
+        {
+            verticalVelocity = -gravityOnGround;
+        }
+        else if (!grounded)
+        {
+            // We are in the air, so apply gravity.
+            verticalVelocity -= gravity * Time.deltaTime;
+        }
+
+        // 3. Finally, apply the movement using the CharacterController.
+        // We use the `finalMove` vector calculated in Update.
+        // We multiply by Time.deltaTime to make the final movement frame-rate independent.
+        characterController.Move(finalMove * Time.deltaTime);
     }
     private void GetTouchInput()
     {
@@ -126,39 +163,18 @@ public class FirstPersonController : MonoBehaviour
         cameraTransform.localRotation = Quaternion.Euler(cameraPitch, 0f, 0f);
     }
 
-    void HandleMovementAndGravity()
+
+    //DEBUG POSPUSE
+    // Add this entire function to your script
+    void OnDrawGizmosSelected()
     {
-        // --- Step 1: Handle Horizontal Movement (from player input) ---
-        Vector3 horizontalMove = Vector3.zero; // Default to no movement
+        // Make sure you have a groundCheck object assigned in the inspector
+        if (groundCheck == null) return;
 
-        // Only calculate horizontal movement if the left finger is tracked
-        if (leftFingerID != -1 && moveInput.sqrMagnitude > moveInputDeadZonePercent)
-        {
-            // Get the direction 
-            Vector2 movementDir = moveInput.normalized * moveSpeed;
-            horizontalMove = transform.forward * movementDir.y + transform.right * movementDir.x;
-        }
+        // Set the color of the gizmo
+        Gizmos.color = Color.red;
 
-        // --- Step 2: Handle Vertical Movement (Gravity) ---
-
-        // If we are on the ground and falling, reset velocity to a small downward force
-        // This helps the character stick to slopes.
-        if (grounded && verticalVelocity < 0)
-        {
-            verticalVelocity = -gravityOnGround;
-        }
-
-        // Apply gravity over time
-        verticalVelocity -= gravity * Time.deltaTime;
-
-        // Create the vertical movement vector
-        Vector3 verticalMove = Vector3.up * verticalVelocity;
-
-        // --- Step 3: Combine and Move ---
-        // Combine horizontal and vertical motion, and THEN make it frame-rate independent
-        Vector3 finalMove = (horizontalMove + verticalMove) * Time.deltaTime;
-
-        // Apply the final, combined movement in a SINGLE call
-        characterController.Move(finalMove);
+        // Draw the sphere in the Scene view
+        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
     }
 }
