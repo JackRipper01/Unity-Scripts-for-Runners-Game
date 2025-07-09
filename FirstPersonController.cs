@@ -28,8 +28,10 @@ public class FirstPersonController : MonoBehaviour
 
     //Gravity
     [Header("Gravity & Jumping")]
-    public float gravityOnGround;
-    public float gravity;
+    public float gravityOnGround = 5f;
+    public float gravity = 5f;
+    public float jumpHeight = 2f;
+
 
     [Header("Ground Check")]
     public Transform groundCheck;
@@ -156,10 +158,15 @@ public class FirstPersonController : MonoBehaviour
         transform.rotation *= Quaternion.Euler(0f, lookInput.x, 0f);
         cameraTransform.localRotation = Quaternion.Euler(cameraPitch, 0f, 0f);
     }
-
+    public void HandleJump()
+    {
+        if (grounded)
+        {
+            verticalVelocity = Mathf.Sqrt(2f * gravity * jumpHeight);
+        }
+    }
 
     //DEBUG POSPUSE
-    // Add this entire function to your script
     void OnDrawGizmosSelected()
     {
         // Make sure you have a groundCheck object assigned in the inspector
